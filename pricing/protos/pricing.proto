@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package pricing.v1;
+
+import "google/protobuf/timestamp.proto";
+
+service PricingService {
+  rpc CalculateTotal(OrderItemsRequest) returns (TotalCalculationResponse);
+}
+
+message ItemToCalculate {
+  string uuid = 1;
+  int32 product_id = 2;
+  double quantity = 3;
+}
+
+message OrderItemsRequest {
+  repeated ItemToCalculate items = 1;
+}
+
+message TotalCalculationResponse {
+  double total_amount = 1;
+}

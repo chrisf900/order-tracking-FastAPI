@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package catalog.v1;
+
+//import "buf/validate/validate.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+service CatalogService {
+  rpc GetPaginatedProducts(GetPaginatedProductsRequest) returns (GetPaginatedProductsResponse);
+  rpc GetProductsForPricing(GetProductsRequest) returns (GetProductForPricingResponse);
+  rpc GetProducts(GetProductsRequest) returns (GetProductsResponse);
+  rpc GetProductsForValidation(GetProductsRequest) returns (GetProductsForValidationResponse);
+}
+
+message Product {
+  int32 id = 1;
+  string uuid = 2;
+  string name = 3;
+  string sku = 4;
+  string brand = 5;
+  string description = 6;
+  float unit = 7;
+  float unit_size = 8;
+  float weight = 9;
+  float price = 10;
+  string category = 11;
+  google.protobuf.Timestamp created_at = 12;
+  google.protobuf.Timestamp updated_at = 13;
+}
+
+message GetProductsRequest {
+  repeated int32 product_ids = 1;
+}
+
+message GetProductsForPricing {
+  int32 id = 1;
+  string sku = 2;
+  float unit = 3;
+  float price = 4;
+}
+
+message GetProductForPricingResponse {
+  repeated GetProductsForPricing products = 1;
+}
+
+message GetProductsForValidationResponse {
+  repeated int32 product_ids = 1;
+}
+
+message GetPaginatedProductsRequest {
+  int32 page_size = 1;
+  optional string page_token = 2; // Token para obtener la siguiente página
+  optional string search_text = 3;
+}
+
+// Respuesta con paginación
+message GetPaginatedProductsResponse {
+  repeated Product products = 1;
+  string next_page_token = 2; // Token para continuar (vacío si no hay más páginas)
+  bool has_more = 3;
+}
+
+message GetProductsResponse {
+  repeated Product products = 1;
+}

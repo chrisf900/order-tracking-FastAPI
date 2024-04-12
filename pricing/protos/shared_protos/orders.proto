@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package orders.v1;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+service OrderService {
+  rpc CreateOrder(CreateOrderRequest) returns(OrderResponse);
+  rpc GetOrder(OrderRequest) returns (OrderResponse);
+  rpc GetOrderItems(OrderRequest) returns (OrderItemsResponse);
+  rpc GetOrderSummary(OrderRequest) returns (OrderSummaryResponse);
+  rpc UpdateOrderStatus(OrderStatusRequest) returns (OrderResponse);
+  rpc CancelOrder(OrderRequest) returns (OrderResponse);
+}
+
+message OrderItemRequest {
+  string uuid = 1;
+  int32 product_id = 2;
+  float quantity = 3;
+}
+
+message CreateOrderRequest {
+  string user_uuid = 1;
+  double total_amount = 2;
+  repeated OrderItemRequest items = 3;
+
+}
+
+message OrderRequest {
+  string uuid = 1;
+}
+
+message OrderResponse {
+  string uuid = 1;
+  string user_uuid = 2;
+  string delivery_status = 3;
+  float total_amount = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+message OrderItemResponse {
+  string uuid = 1;
+  int32 product_id = 2;
+  float quantity = 3;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp updated_at = 5;
+}
+
+message OrderItemsResponse {
+  string order_uuid = 1;
+  repeated OrderItemResponse order_items = 2;
+}
+
+message OrderStatusRequest {
+  string order_uuid = 1;
+  string status = 2;
+}
+
+message OrderSummaryResponse {
+  string uuid = 1;
+  string user_uuid = 2;
+  string delivery_status = 3;
+  double total_amount = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+  repeated OrderItemResponse order_items = 7;
+}
