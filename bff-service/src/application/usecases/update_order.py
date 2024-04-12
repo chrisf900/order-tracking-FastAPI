@@ -9,10 +9,6 @@ class UpdateOrderStatusUseCase:
         self.order_gateway = order_gateway
 
     async def execute(self, order_uuid: str, new_status: str):
-        try:
-            order = await self.order_gateway.update_order_status(
-                order_uuid=order_uuid, status=new_status
-            )
-        except Exception:
-            raise
-        return order
+        return await self.order_gateway.update_order_status(
+            order_uuid=order_uuid, status=new_status
+        )
