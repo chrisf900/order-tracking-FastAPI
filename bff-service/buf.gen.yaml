@@ -1,0 +1,9 @@
+version: v2
+clean: true
+plugins:
+  - remote: buf.build/protocolbuffers/python:v25.3
+    out: generated
+  - remote: buf.build/grpc/python:v1.62.1
+    out: generated
+inputs:
+  - directory: protos
