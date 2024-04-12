@@ -17,10 +17,14 @@ lib64/
 parts/
 sdist/
 var/
-src/
 *.egg-info/
 .installed.cfg
 *.egg
+.env
+.env.*
+!.env.example
+venv/
+.venv/
 
 # Installer logs
 pip-log.txt
@@ -36,9 +40,6 @@ htmlcov/
 .cache
 .pytest_cache/
 nosetests.xml
-
-# Sphinx documentation
-docs/_build/
 
 # PyBuilder
 target/
