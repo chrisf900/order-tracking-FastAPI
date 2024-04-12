@@ -1,44 +1,133 @@
 services:
-  db:
-    container_name: postgresql_db
+  orders-db:
     image: postgres
     restart: always
     ports:
-      - 5432:5432
+      - 5433:5432
+    env_file:
+      - ./orders/.env
     environment:
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_DB=${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${ORDERS_DB_NAME}
+      POSTGRES_HOST_AUTH_METHOD: md5
+      POSTGRES_INITDB_ARGS: "--auth-local=md5 --auth-host=md5"
+    networks:
+      - backend
 
-  db-test:
-    container_name: postgresql_db_test
-    image: postgres
-    ports:
-      - 5438:5432
-    environment:
-      - POSTGRES_USER=${TEST_DB_USER}
-      - POSTGRES_PASSWORD=${TEST_DB_PASSWORD}
-      - POSTGRES_DB=${TEST_DB_NAME}
-
-  pgadmin:
-    container_name: pgadmin
-    image: dpage/pgadmin4
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
-      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
-    ports:
-      - 5050:80
+  pgbouncer-orders:
+    image: edoburu/pgbouncer:latest
+    env_file:
+      - ./orders/.env
     depends_on:
-      - db
+      - orders-db
+    environment:
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: orders-db
+      DB_PORT: 5432
+      LISTEN_PORT: 6432
+      POOL_MODE: transaction
+      AUTH_TYPE: md5
+      MAX_CLIENT_CONN: 100
+      DEFAULT_POOL_SIZE: 20
+    ports:
+      - "6432:6432"
+    networks:
+      - backend
 
-  app:
-    container_name: app
-    build: .
-    command: bash -c "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+  catalog-db:
+    image: postgres
+    restart: always
+    ports:
+      - 5434:5432
+    env_file:
+      - ./catalog/.env
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${CATALOG_DB_NAME}
+      POSTGRES_HOST_AUTH_METHOD: md5
+      POSTGRES_INITDB_ARGS: "--auth-local=md5 --auth-host=md5"
+    networks:
+      - backend
+
+  pgbouncer-catalog:
+    image: edoburu/pgbouncer:latest
+    env_file:
+      - ./catalog/.env
+    depends_on:
+      - catalog-db
+    environment:
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: catalog-db
+      DB_PORT: 5432
+      LISTEN_PORT: 6432
+      POOL_MODE: transaction
+      AUTH_TYPE: md5
+      MAX_CLIENT_CONN: 100
+      DEFAULT_POOL_SIZE: 20
+    ports:
+      - "6434:6432"
+    networks:
+      - backend
+
+  orders-service:
+    build: ./orders
+    env_file:
+      - ./orders/.env
+    ports:
+      - "50053:50053" # gRPC
+    depends_on:
+      - pgbouncer-orders
     volumes:
-      - .:/app
+      - ./orders:/app
+    networks:
+      - backend
+
+  catalog-service:
+    build: ./catalog
+    env_file:
+      - catalog/.env
     ports:
-      - 8000:8000
+      - "50051:50051" # gRPC
     depends_on:
-      - db
-    restart: always
+      - pgbouncer-catalog
+    volumes:
+      - ./catalog:/app
+    networks:
+      - backend
+
+  pricing-service:
+    build: ./pricing
+    ports:
+      - "50054:50054" # gRPC
+    #depends_on:
+    #  - orders_service
+    #  - catalog_service
+    volumes:
+      - ./pricing:/app
+    networks:
+      - backend
+
+  bff-service:
+    build: ./bff-service
+    ports:
+      - "8000:8000"
+      - "50055:50055" # gRPC
+    volumes:
+      - ./bff-service:/app
+    networks:
+      - backend
+
+  buf-gen:
+    image: bufbuild/buf:latest
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    entrypoint: [ "sh", "./generate_protos.sh" ]
+
+networks:
+  backend:
+    driver: bridge
